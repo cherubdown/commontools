@@ -1,4 +1,4 @@
-﻿using Intranet2.Common.Attributes;
+using Intranet2.Common.Attributes;
 using Intranet2.Common.Extensions;
 using System;
 using System.Collections.Generic;
@@ -33,8 +33,6 @@ namespace Intranet2.Helpers
                             cmd.Parameters.Add(p);
                         }
                     }
-
-
 
                     SqlDataReader reader = null;
                     reader = cmd.ExecuteReader();
@@ -110,7 +108,14 @@ namespace Intranet2.Helpers
                 if (reader.HasColumn(prop.Name))
                 {
                     var value = reader[prop.Name] == DBNull.Value ? default(T) : reader[prop.Name];
-                    prop.SetValue(instance, value, null);
+                    
+                    Type propertyType = prop.PropertyType;
+                    
+                    var targetType = IsNullableType(propertyType) ? Nullable.GetUnderlyingType(propertyType) : propertyType;
+                    
+                    var propertyVal = value == null ? null : Convert.ChangeType(value, targetType);
+                    
+                    prop.SetValue(instance, propertyVal, null);
                 }
             }
             else
@@ -121,6 +126,10 @@ namespace Intranet2.Helpers
                     prop.SetValue(instance, value, null);
                 }
             }
+        }
+        private static bool IsNullableType(Type type)
+        {
+            return type.IsGenericType && type.GetGenericTypeDefinition().Equals(typeof(Nullable<>));
         }
 
     }
